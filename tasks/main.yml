@@ -10,10 +10,10 @@
     - "{{ alertmanager_config_dir }}"
     - "{{ alertmanager_config_dir }}/template"
 
-- name: Ensure notification template config
+- name: Ensure notification template configs
   copy:
-    src: template/telegram.tmpl
-    dest: "{{ alertmanager_config_dir }}/template/telegram.tmpl"
+    src: template/
+    dest: "{{ alertmanager_config_dir }}/template/"
     mode: 0644
     owner: root
     group: root
