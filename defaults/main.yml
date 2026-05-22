@@ -1,6 +1,6 @@
 ---
 alertmanager_container_name: alertmanager
-alertmanager_docker_image: "prom/alertmanager:v0.27.0"
+alertmanager_docker_image: "prom/alertmanager:v0.32.1"
 alertmanager_docker_labels:
   - prometheus
   - alertmanager

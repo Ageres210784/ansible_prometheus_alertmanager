@@ -1,0 +1,68 @@
+{{/*
+  Mattermost message template with hard 4096 chars limit.
+  Builds a compact message using Markdown and appends alerts while it fits.
+*/}}
+
+{{- define "__subject" -}}
+{{- "" -}}
+{{- end -}}
+{{- define "__alertmanager" -}}
+{{- "" -}}
+{{- end -}}
+
+{{- define "mattermost.default.message" -}}
+{{- $maxLen := 4096 -}}
+{{- $head := printf "### (%d) messages received\n" (len .Alerts) -}}
+{{- $msg := $head -}}
+{{- $truncated := false -}}
+
+{{- range .Alerts -}}
+  {{- $icon := "✅" -}}
+  {{- if eq .Status "firing" -}}{{- $icon = "🔥" -}}{{- end -}}
+  {{- $name := .Labels.alertname -}}
+  {{- $sev := .Labels.severity -}}
+  {{- $desc := "" -}}
+  {{- $summary := "" -}}
+  {{- if .Annotations.summary -}}
+    {{- if eq .Status "firing" -}}
+      {{- $summary = printf " — %.180s" .Annotations.summary -}}
+    {{- else -}}
+      {{- if .Annotations.summary_resolved -}}
+        {{- $summary = printf " — %.180s" .Annotations.summary_resolved -}}
+      {{- else -}}
+        {{- $summary = " — resolved" -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- $started := .StartsAt.Local.Format "2006-01-02 15:04:05" -}}
+  {{- $ended := .EndsAt.Local.Format "2006-01-02 15:04:05" -}}
+  {{- if eq .Status "firing" -}}{{- $ended = "**not**" -}}{{- end -}}
+  {{- if .Annotations.description -}}
+    {{- $desc = printf " — %.180s" .Annotations.description -}}
+  {{- end -}}
+  {{- $line := printf "%s **%s** (%s)%s\nStarted: %s; Ended: %s\n\n" $icon $name $sev $summary $started $ended -}}
+
+  {{- if le (len (print $msg $line)) $maxLen -}}
+    {{- $msg = print $msg $line -}}
+  {{- else -}}
+    {{- $truncated = true -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $truncated -}}
+  {{- $suffix := "\n⚠️ Message truncated." -}}
+  {{- if le (len (print $msg $suffix)) $maxLen -}}
+    {{- $msg = print $msg $suffix -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if gt (len $msg) $maxLen -}}
+  {{- $msg = printf "%.4096s" $msg -}}
+{{- end -}}
+{{- if gt (len $msg) 0 -}}
+{{ $msg }}
+{{- else -}}
+Alertmanager notification
+{{- end -}}
+{{- end -}}
